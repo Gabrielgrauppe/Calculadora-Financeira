@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora Financeira</title>
+</head>
+<body>
+    <h1>Calculadora Financeira</h1>
+
+    <form id="calc-form">
+        <input type="number" id="renda" name="renda" placeholder="Sua renda mensal"><br>
+        <input type="number" id="valor" name="valor" placeholder="Valor do empréstimo"><br>
+        <input type="number" id="prazo" name="prazo" placeholder="Prazo em meses"><br>
+        <input type="text" id="taxa" name="taxa" placeholder="Taxa de juros anual (opcional)"><br>
+        <input type="checkbox" id="var" name="var" value="0"> Usar taxa padrão (6% ao ano)<br>
+        <button type="button" onclick="calcular()">Calcular Empréstimo</button>
+    </form>
+
+    <div id="resultado"></div>
+    <div id="juros-devidos"></div>
+
+    <script>
+        function calcular() {
+            var form = document.getElementById('calc-form');
+            var formData = new FormData(form);
+
+            var useDefault = document.getElementById('var').checked;
+            if (useDefault) {
+                formData.set('taxa', '');
+            } else {
+                var taxaInput = document.getElementById('taxa').value;
+                if (!isNaN(parseInt(taxaInput))) {
+                    formData.set('taxa', parseFloat(taxaInput) / 100);
+                }
+            }
+
+            fetch('/calcular_emprestimo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('resultado').innerHTML = '<p>' + data.error + '</p>';
+                } else {
+                    document.getElementById('resultado').innerHTML = '<p>Valor da prestação mensal: R$' + data.prestacao + '</p><p>Custo total do empréstimo: R$' + data.custo_total + '</p>';
+
+                    var valorEmprestimo = document.getElementById('valor').value;
+                    var custoTotal = data.custo_total;
+                    var jurosDevidos = custoTotal - valorEmprestimo;
+                    document.getElementById('juros-devidos').innerHTML = '<p>Juros devidos: R$' + jurosDevidos.toFixed(2) + '</p>';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('var').addEventListener('change', function() {
+            var taxaInput = document.getElementById('taxa');
+            taxaInput.disabled = this.checked;
+            taxaInput.value = '';
+        });
+    </script>
+
+    <footer>
+    <p>Observação 1: Optei por permitir que os usuários insiram a porcentagem diretamente (5, 6, etc.) para facilitar a entrada de dados, pois é mais intuitivo para a maioria dos usuários lidarem com valores percentuais ao invés de formatos decimais (0.05). Isso foi feito para melhorar a usabilidade da aplicação.</p>
+    <p>Observação 2: Se não ultilizar nenhuma taxa, a taxa usada automaticamente será a padrão 6%.</p>
+    </footer>
+
+</body>
+</html>
+
